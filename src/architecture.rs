@@ -82,8 +82,7 @@ impl Architecture {
        *
        *    The interpreter sets the program counter to nnn.
        */
-      //TODO: implement this using bitwise AND with a mask 
-      self.pc = instruction % 0x1000;
+      self.pc = instruction & 0xFFF;
   }
   fn call(self: &mut Self, instruction: u16) -> () {
       /*    2nnn
@@ -96,8 +95,7 @@ impl Architecture {
        */
       self.stack.sp += 1;
       self.stack.push(self.pc);
-      //TODO: implement this using bitwise AND with a mask 
-      self.pc = instruction % 0x1000;
+      self.pc = instruction & 0xFFF;
   }
   fn s_e_byte(self: &mut Self, instruction:u16) -> () {
       /*   3xkk

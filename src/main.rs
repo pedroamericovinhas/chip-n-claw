@@ -2,7 +2,6 @@ use std::env;
 use std::fs;
 mod architecture;
 use architecture::Architecture;
-// Dev branch??
 
 fn main() {
     let args: Vec<String> = env::args().collect();
