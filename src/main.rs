@@ -5,6 +5,7 @@ use std::process;
 const WIDTH:  usize = 64;
 const HEIGHT: usize = 32;
 const STACK_SIZE: usize = 16;
+const RAM_SIZE: usize = 0x1000;
 fn main() {
     let args: Vec<String> = env::args().collect();
     let rom = init_rom(args[1].as_str());
@@ -49,17 +50,18 @@ fn execute(instruction: u16, arch: &mut Architecture, stack: Stack, v: [u8; 16])
 }
 #[derive(Debug, Clone, Copy)]
 pub struct Architecture {
-    
-    v: [u8; 16],
+    ram: [u8; RAM_SIZE],
     display: [u8; WIDTH*HEIGHT],
-    i:  u16,
-    pc: u16,
-    dt: u8,
-    st: u8,
+    v: [u8; 16],
+    i:  u16, pc: u16, dt: u8, st: u8,
 }
 impl Architecture {
     fn new()->Self {
-        Self { i: 0, pc: 0, dt: 0, st: 0, display: [0; WIDTH*HEIGHT], v: [0;16]}
+        Self { 
+            ram: [0; RAM_SIZE],
+            display: [0; WIDTH*HEIGHT],
+            v: [0;16],
+            i: 0, pc: 0, dt: 0, st: 0,}
     }
 }
 
@@ -84,7 +86,7 @@ impl OpCodes {
          */ 
         *display = [0u8; 64*32];
     }
-    fn ret(registers: &mut Architecture, stack:&mut Stack) -> () {
+    fn ret(arch: &mut Architecture, stack:&mut Stack) -> () {
         /*    00EE
          *   
          *    Return from a subroutine.
@@ -93,18 +95,18 @@ impl OpCodes {
          *    at the top of the stack, then subtracts 1 from the stack pointer.
          */
         
-        registers.pc = todo!();
+        arch.pc = todo!();
     }
-    fn jp(registers: &mut Architecture, nnn:u16) -> () {
+    fn jp(arch: &mut Architecture, nnn:u16) -> () {
         /*    1nnn
          *
          *    Jump to location nnn.
          *
          *    The interpreter sets the program counter to nnn.
          */
-        registers.pc = nnn;
+        arch.pc = nnn;
     }
-    fn call(registers: &mut Architecture, mut stack:Stack, nnn:u16) -> () {
+    fn call(arch: &mut Architecture, mut stack:Stack, nnn:u16) -> () {
         /*    2nnn
          *
          *    Call subroutine at nnn.
@@ -114,10 +116,10 @@ impl OpCodes {
          *    The PC is then set to nnn.
          */
         stack.sp += 1;
-        stack.push(registers.pc);
-        registers.pc = nnn;
+        stack.push(arch.pc);
+        arch.pc = nnn;
     }
-    fn s_e_byte(v: [u8; 16], registers: &mut Architecture, x: u8, kk:u8) -> () {
+    fn s_e_byte(v: [u8; 16], arch: &mut Architecture, x: u8, kk:u8) -> () {
         /*   3xkk
         *
         *    Skip next instruction if Vx == kk.
@@ -126,10 +128,10 @@ impl OpCodes {
         *    and if they are equal, increments the program counter by 2.
         */
         if v[x as usize] == kk{
-            registers.pc += 2;
+            arch.pc += 2;
         }
     }
-    fn s_n_e_byte(v: [u8; 16], registers: &mut Architecture, x: u8, kk:u8) -> () {
+    fn s_n_e_byte(v: [u8; 16], arch: &mut Architecture, x: u8, kk:u8) -> () {
         /*   4xkk
         *
         *    Skip next instruction if Vx != kk.
@@ -138,10 +140,10 @@ impl OpCodes {
         *    and if they are not equal, increments the program counter by 2.
         */
         if v[x as usize] != kk{
-            registers.pc += 2;
+            arch.pc += 2;
         }
     }
-    fn s_e_register(v: [u8; 16], registers: &mut Architecture, x: u8, y:u8) -> () {
+    fn s_e_register(v: [u8; 16], arch: &mut Architecture, x: u8, y:u8) -> () {
         /*   5xy0
         *
         *    Skip next instruction if Vx == Vy.
@@ -150,10 +152,10 @@ impl OpCodes {
         *    and if they are equal, increments the program counter by 2.
         */
         if v[x as usize] == v[y as usize]{
-            registers.pc += 2;
+            arch.pc += 2;
         }
     }
-    fn load_byte(mut v: [u8; 16], registers: &mut Architecture, x: u8, kk:u8) -> () {
+    fn load_byte(mut v: [u8; 16], arch: &mut Architecture, x: u8, kk:u8) -> () {
         /*   6xkk
          *   
          *   Set Vx = kk.
@@ -162,7 +164,7 @@ impl OpCodes {
          */
         v[x as usize] = kk;
     }
-    fn add_byte(mut v: [u8; 16], registers: &mut Architecture, x: u8, kk:u8) -> () {
+    fn add_byte(mut v: [u8; 16], arch: &mut Architecture, x: u8, kk:u8) -> () {
         /*   7xkk
          *   
          *   Set Vx = Vx + kk.
