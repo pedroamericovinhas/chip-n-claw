@@ -1,7 +1,16 @@
 # Chip'n'Claw [WIP]
 Blazingly fast CHIP-8 interpreter written in Rust.
 
+## TODO:
+* Code CPU emulator
+  * Finish writing OpCodes
+  * Test all of them rigorously
+  * Check if RAM works as intended
+* Code Graphics
+* Code Audio
+
 ## Build
+*Beware, this is still highly unstable, and I'm not even sure it works.*
 ### Linux
 Making sure you have `cargo` installed,
 ```bash
