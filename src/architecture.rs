@@ -89,12 +89,14 @@ impl Architecture {
     }
 }
 impl Architecture {
+    
     /// 00E0 - CLS
     ///
     /// Clear the display.
     fn clear(self: &mut Self) -> () {
         self.display = [0u8; 64 * 32];
     }
+    
     /// 00EE - RET
     ///  
     /// Return from a subroutine.
@@ -104,6 +106,7 @@ impl Architecture {
     fn ret(self: Self) -> () {
         todo!();
     }
+    
     /// 1nnn - JP addr
     ///  
     /// Jump to location nnn.
@@ -112,55 +115,55 @@ impl Architecture {
     fn jp(self: &mut Self, instruction: u16) -> () {
         self.pc = instruction & 0xFFF;
     }
+    
+    /// 2nnn - CALL addr
+    /// 
+    /// Call subroutine at nnn.
+    /// 
+    /// The interpreter increments the stack pointer,
+    /// then puts the current PC on the top of the stack.
+    /// The PC is then set to nnn.
     fn call(self: &mut Self, instruction: u16) -> () {
-        /*    2nnn - CALL addr
-         *
-         *    Call subroutine at nnn.
-         *
-         *    The interpreter increments the stack pointer,
-         *    then puts the current PC on the top of the stack.
-         *    The PC is then set to nnn.
-         */
         self.stack.sp += 1;
         self.stack.push(self.pc);
         self.pc = instruction & 0xFFF;
     }
+    
+    /// 3xkk - SE Vx, byte
+    ///
+    /// Skip next instruction if Vx == kk.
+    ///
+    /// The interpreter compares register Vx to kk,
+    /// and if they are equal, increments the program counter by 2.
     fn s_e_byte(self: &mut Self, instruction: u16) -> () {
-        /*   3xkk - SE Vx, byte
-         *
-         *    Skip next instruction if Vx == kk.
-         *
-         *    The interpreter compares register Vx to kk,
-         *    and if they are equal, increments the program counter by 2.
-         */
         let x: usize = ((instruction & 0x0F00) >> 2 * 4).try_into().unwrap();
         let kk: u8 = (instruction & 0x00FF).try_into().unwrap();
         if self.v[x] == kk {
             self.pc += 2;
         }
     }
+
+    /// 4xkk - SNE Vx, byte
+    ///
+    /// Skip next instruction if Vx != kk.
+    ///
+    /// The interpreter compares register Vx to kk,
+    /// and if they are not equal, increments the program counter by 2.
     fn s_n_e_byte(self: &mut Self, instruction: u16) -> () {
-        /*   4xkk - SNE Vx, byte
-         *
-         *    Skip next instruction if Vx != kk.
-         *
-         *    The interpreter compares register Vx to kk,
-         *    and if they are not equal, increments the program counter by 2.
-         */
         let x: usize = ((instruction & 0x0F00) >> 2 * 4).try_into().unwrap();
         let kk: u8 = (instruction & 0x00FF).try_into().unwrap();
         if self.v[x] != kk {
             self.pc += 2;
         }
     }
+
+    /// 5xy0 - SE Vx, Vy
+    ///
+    /// Skip next instruction if Vx == Vy.
+    /// 
+    /// The interpreter compares register Vx to register Vy,
+    /// and if they are equal, increments the program counter by 2.
     fn s_e_register(self: &mut Self, instruction: u16) -> () {
-        /*   5xy0 - SE Vx, Vy
-         *
-         *    Skip next instruction if Vx == Vy.
-         *
-         *    The interpreter compares register Vx to register Vy,
-         *    and if they are equal, increments the program counter by 2.
-         */
         if (instruction & 0xF) != 0x0 {
             panic!("OpCode does not exist!")
         };
@@ -170,92 +173,94 @@ impl Architecture {
             self.pc += 2;
         }
     }
+    
+    /// 6xkk - LD Vx, byte
+    ///
+    /// Set Vx = kk.
+    ///
+    /// The interpreter puts the value kk into register Vx.
     fn load_byte(self: &mut Self, instruction: u16) -> () {
-        /*   6xkk - LD Vx, byte
-         *
-         *   Set Vx = kk.
-         *
-         *   The interpreter puts the value kk into register Vx.
-         */
         let x: usize = ((instruction & 0x0F00) >> 2 * 4).try_into().unwrap();
         let kk: u8 = (instruction & 0x00FF).try_into().unwrap();
         self.v[x] = kk;
     }
+    
+    /// 7xkk - ADD Vx, byte
+    ///
+    /// Set Vx = Vx + kk.
+    ///
+    /// Adds the value kk to the value of register Vx,
+    /// then stores the result in Vx.
     fn add_byte(self: &mut Self, instruction: u16) -> () {
-        /*   7xkk - ADD Vx, byte
-         *
-         *   Set Vx = Vx + kk.
-         *
-         *   Adds the value kk to the value of register Vx,
-         *   then stores the result in Vx.
-         */
         let x: usize = ((instruction & 0x0F00) >> 2 * 4).try_into().unwrap();
         let kk: u8 = (instruction & 0x00FF).try_into().unwrap();
         self.v[x] += kk;
     }
+
+    /// 8xy0 - LD Vx, Vy
+    ///
+    /// Set Vx = Vy.
+    ///
+    /// Stores the value of register Vy in register Vx.
+    ///
     fn ld(self: &mut Self, instruction: u16) -> () {
-        /*   8xy0 - LD Vx, Vy
-         *
-         *   Set Vx = Vy.
-         *
-         *   Stores the value of register Vy in register Vx.
-         */
         let x: usize = ((instruction & 0x0F00) >> 2 * 4).try_into().unwrap();
         let y: usize = ((instruction & 0x00F0) >> 1 * 4).try_into().unwrap();
         self.v[x] = self.v[y];
     }
+
+    /// 8xy1 - OR Vx, Vy
+    ///
+    /// Set Vx = Vx OR Vy.
+    ///
+    /// Performs a bitwise OR on the values of Vx and Vy, then stores the
+    /// result in Vx. A bitwise OR compares the corrseponding bits from two
+    /// values, and if either bit is 1, then the same bit in the result is
+    /// also 1. Otherwise, it is 0.
+    ///
     fn or(self: &mut Self, instruction: u16) -> () {
-        /* 8xy1 - OR Vx, Vy
-         *
-         * Set Vx = Vx OR Vy.
-         *
-         * Performs a bitwise OR on the values of Vx and Vy, then stores the
-         * result in Vx. A bitwise OR compares the corrseponding bits from two
-         * values, and if either bit is 1, then the same bit in the result is
-         * also 1. Otherwise, it is 0.
-         */
         let x: usize = ((instruction & 0x0F00) >> 2 * 4).try_into().unwrap();
         let y: usize = ((instruction & 0x00F0) >> 1 * 4).try_into().unwrap();
         self.v[x] = self.v[x] | self.v[y];
     }
+
+    /// 8xy2 - AND Vx, Vy
+    ///
+    /// Set Vx = Vx AND Vy.
+    ///
+    /// Performs a bitwise AND on the values of Vx and Vy, then stores the
+    /// result in Vx. A bitwise AND compares the corresponding bits from two
+    /// values, and if if both bits are 1, then the same bit in the result is
+    /// also 1. Otherwise, it is 0.
     fn and(self: &mut Self, instruction: u16) -> () {
-        /* 8xy2 - AND Vx, Vy
-         *
-         * Set Vx = Vx AND Vy.
-         *
-         * Performs a bitwise AND on the values of Vx and Vy, then stores the
-         * result in Vx. A bitwise AND compares the corresponding bits from two
-         * values, and if if both bits are 1, then the same bit in the result is
-         * also 1. Otherwise, it is 0.
-         */
         let x: usize = ((instruction & 0x0F00) >> 2 * 4).try_into().unwrap();
         let y: usize = ((instruction & 0x00F0) >> 1 * 4).try_into().unwrap();
         self.v[x] = self.v[x] & self.v[y];
     }
+
+    /// 8xy3 - XOR Vx, Vy
+    ///
+    /// Set Vx = Vx XOR Vy.
+    ///
+    /// Performs a bitwise exclusive OR on the values of Vx and Vy, then stores
+    /// the result in Vx. An exclusive OR compares the corrseponding bits from
+    /// two values, and if the bits are not both the same, then the corresponding
+    /// bit in the result is set to 1. Otherwise, it is 0.
     fn xor(self: &mut Self, instruction: u16) -> () {
-        /* 8xy3 - XOR Vx, Vy
-         *
-         * Set Vx = Vx XOR Vy.
-         *
-         * Performs a bitwise exclusive OR on the values of Vx and Vy, then stores
-         * the result in Vx. An exclusive OR compares the corrseponding bits from
-         * two values, and if the bits are not both the same, then the corresponding
-         * bit in the result is set to 1. Otherwise, it is 0.
-         */
         let x: usize = ((instruction & 0x0F00) >> 2 * 4).try_into().unwrap();
         let y: usize = ((instruction & 0x00F0) >> 1 * 4).try_into().unwrap();
         self.v[x] = self.v[x] ^ self.v[y];
     }
+
+    /// 8xy4 - ADD Vx, Vy
+    ///
+    /// Set Vx = Vx + Vy, set VF = carry.
+    ///
+    /// The values of Vx and Vy are added together. If the result is greater than
+    /// 8 bits (i.e., > 255,) VF is set to 1,
+    /// otherwise 0. Only the lowest 8 bits of the result are kept,
+    /// and stored in Vx.
     fn add(self: &mut Self, instruction: u16) -> () {
-        /* 8xy4 - ADD Vx, Vy
-         *
-         * Set Vx = Vx + Vy, set VF = carry.
-         *
-         * The values of Vx and Vy are added together. If the result is greater than
-         * 8 bits (i.e., > 255,) VF is set to 1,
-         * otherwise 0. Only the lowest 8 bits of the result are kept,
-         * and stored in Vx.
-         */
         let x: usize = ((instruction & 0x0F00) >> 2 * 4).try_into().unwrap();
         let y: usize = ((instruction & 0x00F0) >> 1 * 4).try_into().unwrap();
         let sum: u16 = self.v[x] as u16 + self.v[y] as u16;
@@ -269,109 +274,125 @@ impl Architecture {
             self.v[0xF] = 1;
         }
     }
+
+    /// 8xy5 - SUB Vx, Vy
+    ///
+    /// Set Vx = Vx - Vy, set VF = NOT borrow.
+    ///
+    /// If Vx > Vy, then VF is set to 1, otherwise 0. Then Vy is subtracted from
+    /// Vx, and the results stored in Vx.
     fn sub(self: &mut Self, instruction: u16) -> () {
-        /* 8xy5 - SUB Vx, Vy
-         *
-         * Set Vx = Vx - Vy, set VF = NOT borrow.
-         *
-         * If Vx > Vy, then VF is set to 1, otherwise 0. Then Vy is subtracted from
-         * Vx, and the results stored in Vx.
-         */
         let x: usize = ((instruction & 0x0F00) >> 2 * 4).try_into().unwrap();
         let y: usize = ((instruction & 0x00F0) >> 1 * 4).try_into().unwrap();
         self.v[0xF] = if self.v[x] > self.v[y] { 1 } else { 0 };
         let subs: u8 = self.v[x] - self.v[y];
         self.v[x] = subs;
     }
+
+    /// 8xy6 - SHR Vx {, Vy}
+    ///
+    /// Set Vx = Vx SHR 1.
+    ///
+    /// If the least-significant bit of Vx is 1, then VF is set to 1,
+    /// otherwise 0. Then Vx is divided by 2.
     fn shr(self: &mut Self, instruction: u16) -> () {
-        /* 8xy6 - SHR Vx {, Vy}
-         *
-         * Set Vx = Vx SHR 1.
-         *
-         * If the least-significant bit of Vx is 1, then VF is set to 1,
-         * otherwise 0. Then Vx is divided by 2.
-         */
         let x: usize = ((instruction & 0x0F00) >> 2 * 4).try_into().unwrap();
         self.v[0xF] = self.v[x] & 0x1;
         self.v[x] >>= 1;
     }
+
+    /// 8xy7 - SUBN Vx, Vy
+    ///
+    /// Set Vx = Vy - Vx, set VF = NOT borrow.
+    ///
+    /// If Vy > Vx, then VF is set to 1, otherwise 0. Then Vx is subtracted from
+    /// Vy, and the results stored in Vx.
     fn subn(self: &mut Self, instruction: u16) -> () {
-        /* 8xy7 - SUBN Vx, Vy
-         *
-         * Set Vx = Vy - Vx, set VF = NOT borrow.
-         *
-         * If Vy > Vx, then VF is set to 1, otherwise 0. Then Vx is subtracted from
-         * Vy, and the results stored in Vx.
-         */
         self.sub(Hex::swap_hex_digits(instruction, 1, 2));
     }
+
+    /// 8xyE - SHL Vx {, Vy}
+    ///
+    /// Set Vx = Vx SHL 1.
+    ///
+    /// If the most-significant bit of Vx is 1, then VF is set to 1, otherwise to
+    /// 0. Then Vx is multiplied by 2.
     fn shl(self: &mut Self, instruction: u16) -> () {
-        /* 8xyE - SHL Vx {, Vy}
-         *
-         * Set Vx = Vx SHL 1.
-         *
-         * If the most-significant bit of Vx is 1, then VF is set to 1, otherwise to
-         * 0. Then Vx is multiplied by 2.
-         */
         let x: usize = ((instruction & 0x0F00) >> 2 * 4).try_into().unwrap();
         self.v[0xF] = self.v[x] >> 7;
         self.v[x] <<= 1;
     }
+
+    // 9xy0 - SNE Vx, Vy
+    //
+    // Skip next instruction if Vx != Vy.
+    //
+    // The values of Vx and Vy are compared, and if they are not equal, the
+    // program counter is increased by 2.
     fn s_n_e(self: &mut Self, instruction: u16) -> () {
-        /* 9xy0 - SNE Vx, Vy
-         *
-         * Skip next instruction if Vx != Vy.
-         *
-         * The values of Vx and Vy are compared, and if they are not equal, the
-         * program counter is increased by 2.
-         */
         todo!()
     }
+
     fn ld_i(self: &mut Self, instruction: u16) -> () {
         todo!()
     }
+
     fn jp_v0(self: &mut Self, instruction: u16) -> () {
         todo!()
     }
+
     fn rnd(self: &mut Self, instruction: u16) -> () {
         todo!()
     }
+
     fn drw(self: &mut Self, instruction: u16) -> () {
         todo!()
     }
+
     fn skp(self: &mut Self, instruction: u16) -> () {
         todo!()
     }
+
     fn sknp(self: &mut Self, instruction: u16) -> () {
         todo!()
     }
+
     fn ld_reg_dt(self: &mut Self, instruction: u16) -> () {
         todo!()
     }
+
     fn ld_wait(self: &mut Self, instruction: u16) -> () {
         todo!()
     }
+
     fn ld_dt_reg(self: &mut Self, instruction: u16) -> () {
         todo!()
     }
+
     fn ld_st(self: &mut Self, instruction: u16) -> () {
         todo!()
     }
+
     fn add_i(self: &mut Self, instruction: u16) -> () {
         todo!()
     }
+
     fn ld_loc(self: &mut Self, instruction: u16) -> () {
         todo!()
     }
+
     fn ld_bcd(self: &mut Self, instruction: u16) -> () {
         todo!()
     }
+
     fn store_regs(self: &mut Self, instruction: u16) -> () {
         todo!()
     }
+
     fn read_regs(self: &mut Self, instruction: u16) -> () {
         todo!()
     }
+
 
     fn exit() -> () {
         process::exit(0);
