@@ -1,7 +1,6 @@
 mod stack;
 mod utils;
 use stack::Stack;
-use std::process;
 use utils::Hex;
 
 const WIDTH: usize = 64;
@@ -319,77 +318,165 @@ impl Architecture {
         self.v[x] <<= 1;
     }
 
-    // 9xy0 - SNE Vx, Vy
-    //
-    // Skip next instruction if Vx != Vy.
-    //
-    // The values of Vx and Vy are compared, and if they are not equal, the
-    // program counter is increased by 2.
+    /// 9xy0 - SNE Vx, Vy
+    ///
+    /// Skip next instruction if Vx != Vy.
+    ///
+    /// The values of Vx and Vy are compared, and if they are not equal, the
+    /// program counter is increased by 2.
     fn s_n_e(self: &mut Self, instruction: u16) -> () {
-        todo!()
+        let x: usize = ((instruction & 0x0F00) >> 2 * 4).try_into().unwrap();
+        let y: usize = ((instruction & 0x00F0) >> 1 * 4).try_into().unwrap();
+        if self.v[x] != self.v[y] {
+            self.pc += 2;
+        }
     }
 
+    /// Annn - LD I, addr
+    /// 
+    /// Set I = nnn.
+    ///
+    /// The value of register I is set to nnn.
     fn ld_i(self: &mut Self, instruction: u16) -> () {
         todo!()
     }
 
+    /// Bnnn - JP V0, addr
+    /// 
+    /// Jump to location nnn + V0.
+    ///
+    /// The program counter is set to nnn plus the value of V0.
     fn jp_v0(self: &mut Self, instruction: u16) -> () {
         todo!()
     }
 
+    /// Cxkk - RND Vx, byte
+    /// 
+    /// Set Vx = random byte AND kk.
+    ///
+    /// The interpreter generates a random number from 0 to 255, which is then
+    /// ANDed with the value kk. The results are stored in Vx.
     fn rnd(self: &mut Self, instruction: u16) -> () {
         todo!()
     }
 
+    /// Dxyn - DRW Vx, Vy, nibble
+    /// 
+    /// Display n-byte sprite starting at memory location I at (Vx, Vy), set
+    /// VF = collision.
+    ///
+    /// The interpreter reads n bytes from memory, starting at the address
+    /// stored in I. These bytes are then displayed as sprites on screen at
+    /// coordinates (Vx, Vy). Sprites are XORed onto the existing screen.
+    /// If this causes any pixels to be erased, VF is set to 1, otherwise it is
+    /// set to 0. If the sprite is positioned so part of it is outside the
+    /// coordinates of the display, it wraps around to the opposite side of the
+    /// screen.
     fn drw(self: &mut Self, instruction: u16) -> () {
         todo!()
     }
 
+    /// Ex9E - SKP Vx
+    /// 
+    /// Skip next instruction if key with the value of Vx is pressed.
+    ///
+    /// Checks the keyboard, and if the key corresponding to the value of Vx is
+    /// currently in the down position, PC is increased by 2.
     fn skp(self: &mut Self, instruction: u16) -> () {
         todo!()
     }
 
+    /// ExA1 - SKNP Vx
+    /// 
+    /// Skip next instruction if key with the value of Vx is not pressed.
+    /// 
+    /// Checks the keyboard, and if the key corresponding to the value of Vx is
+    /// currently in the up position, PC is increased by 2.
     fn sknp(self: &mut Self, instruction: u16) -> () {
         todo!()
     }
 
+    /// Fx07 - LD Vx, DT
+    /// 
+    /// Set Vx = delay timer value.
+    /// 
+    /// The value of DT is placed into Vx.
     fn ld_reg_dt(self: &mut Self, instruction: u16) -> () {
         todo!()
     }
 
+    /// Fx0A - LD Vx, K
+    /// 
+    /// Wait for a key press, store the value of the key in Vx.
+    /// 
+    /// All execution stops until a key is pressed, then the value of that key is stored in Vx.
     fn ld_wait(self: &mut Self, instruction: u16) -> () {
         todo!()
     }
-
+    /// Fx15 - LD DT, Vx
+    /// 
+    /// Set delay timer = Vx.
+    /// 
+    /// DT is set equal to the value of Vx.
     fn ld_dt_reg(self: &mut Self, instruction: u16) -> () {
         todo!()
     }
-
+    
+    /// Fx18 - LD ST, Vx
+    /// 
+    /// Set sound timer = Vx.
+    /// 
+    /// ST is set equal to the value of Vx.
     fn ld_st(self: &mut Self, instruction: u16) -> () {
         todo!()
     }
 
+    /// Fx1E - ADD I, Vx
+    /// 
+    /// Set I = I + Vx.
+    /// 
+    /// The values of I and Vx are added, and the results are stored in I.
     fn add_i(self: &mut Self, instruction: u16) -> () {
         todo!()
     }
 
+    /// Fx29 - LD F, Vx
+    /// Set I = location of sprite for digit Vx.
+    /// 
+    /// The value of I is set to the location for the hexadecimal sprite
+    /// corresponding to the value of Vx.
     fn ld_loc(self: &mut Self, instruction: u16) -> () {
         todo!()
     }
 
+    /// Fx33 - LD B, Vx
+    /// 
+    /// Store BCD representation of Vx in memory locations I, I+1, and I+2.
+    /// 
+    /// The interpreter takes the decimal value of Vx, and places the hundreds
+    /// digit in memory at location in I, the tens digit at location I+1, and
+    /// the ones digit at location I+2.
     fn ld_bcd(self: &mut Self, instruction: u16) -> () {
         todo!()
     }
 
+    /// Fx55 - LD [I], Vx
+    /// 
+    /// Store registers V0 through Vx in memory starting at location I.
+    /// 
+    /// The interpreter copies the values of registers V0 through Vx into
+    /// memory, starting at the address in I.
     fn store_regs(self: &mut Self, instruction: u16) -> () {
         todo!()
     }
 
+    /// Fx65 - LD Vx, [I]
+    /// 
+    /// Read registers V0 through Vx from memory starting at location I.
+    /// 
+    /// The interpreter reads values from memory starting at location I into
+    /// registers V0 through Vx.
     fn read_regs(self: &mut Self, instruction: u16) -> () {
         todo!()
-    }
-
-    fn exit() -> () {
-        process::exit(0);
     }
 }
