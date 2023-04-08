@@ -10,7 +10,7 @@ fn main() {
 
     loop {
         // TODO: 60hz loop
-        arch.execute(rom.clone());
+        arch.execute(&rom);
     }
 }
 

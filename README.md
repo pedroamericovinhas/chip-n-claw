@@ -1,4 +1,6 @@
 # Chip'n'Claw [WIP]
+![Our mascot, Crambon](https://i.imgur.com/uvBWC4x.png)
+
 Blazingly fast CHIP-8 interpreter written in Rust.
 
 ## TODO:
