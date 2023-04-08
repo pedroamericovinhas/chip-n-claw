@@ -23,7 +23,7 @@ impl Stack {
         }
     }
 
-    fn pop(&mut self) -> Option<u16> {
+    pub fn pop(&mut self) -> Option<u16> {
         if self.sp > 0 {
             self.sp -= 1;
             let val = self.memory[self.sp];

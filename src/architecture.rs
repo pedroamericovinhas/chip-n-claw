@@ -2,6 +2,7 @@ mod stack;
 mod utils;
 use stack::Stack;
 use utils::Hex;
+use rand::Rng;
 
 const WIDTH: usize = 64;
 const HEIGHT: usize = 32;
@@ -16,7 +17,7 @@ pub struct Architecture {
     i: u16,
     pc: u16,
     dt: u8,
-    st: u8,
+    sp: u8,
 }
 impl Architecture {
     pub fn new() -> Self {
@@ -28,7 +29,7 @@ impl Architecture {
             i: 0,
             pc: 0,
             dt: 0,
-            st: 0,
+            sp: 0,
         }
     }
 }
@@ -98,8 +99,9 @@ impl Architecture {
     ///  
     /// The interpreter sets the program counter to the address at the top of
     /// the stack, then subtracts 1 from the stack pointer.
-    fn ret(self: Self) -> () {
-        todo!();
+    fn ret(self: &mut Self) -> () {
+        self.pc = self.stack.pop().unwrap();
+        self.sp -= 1;
     }
 
     /// 1nnn - JP addr
@@ -259,15 +261,13 @@ impl Architecture {
         let x: usize = ((instruction & 0x0F00) >> 2 * 4).try_into().unwrap();
         let y: usize = ((instruction & 0x00F0) >> 1 * 4).try_into().unwrap();
         let sum: u16 = self.v[x] as u16 + self.v[y] as u16;
-        if sum > 0x0FF {
-            let sum: u8 = (sum >> 1 * 4).try_into().unwrap();
-            self.v[x] = sum;
-            self.v[0xF] = 1;
+        let sum: u8 = if sum > 0x0FF {
+            (sum >> 1 * 4).try_into().unwrap()
         } else {
-            let sum: u8 = sum.try_into().unwrap();
-            self.v[x] = sum;
-            self.v[0xF] = 1;
-        }
+            sum.try_into().unwrap()
+        };
+        self.v[x] = sum;
+        self.v[0xF] = 1;
     }
 
     /// 8xy5 - SUB Vx, Vy
@@ -338,7 +338,7 @@ impl Architecture {
     ///
     /// The value of register I is set to nnn.
     fn ld_i(self: &mut Self, instruction: u16) -> () {
-        todo!()
+        self.i = instruction & 0xFFF;
     }
 
     /// Bnnn - JP V0, addr
@@ -347,7 +347,7 @@ impl Architecture {
     ///
     /// The program counter is set to nnn plus the value of V0.
     fn jp_v0(self: &mut Self, instruction: u16) -> () {
-        todo!()
+        self.pc = self.v[0] as u16 + (instruction & 0xFFF) as u16;
     }
 
     /// Cxkk - RND Vx, byte
@@ -357,7 +357,9 @@ impl Architecture {
     /// The interpreter generates a random number from 0 to 255, which is then
     /// ANDed with the value kk. The results are stored in Vx.
     fn rnd(self: &mut Self, instruction: u16) -> () {
-        todo!()
+        let x: usize = ((instruction & 0x0F00) >> 2 * 4).try_into().unwrap();
+        let kk: u8 = (instruction & 0x00FF).try_into().unwrap();
+        self.v[x] = rand::thread_rng().gen::<u8>() & kk;
     }
 
     /// Dxyn - DRW Vx, Vy, nibble
