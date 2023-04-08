@@ -46,57 +46,53 @@ impl Architecture {
             0x5000..=0x5FFF => self.s_e_register(instruction),
             0x6000..=0x6FFF => self.load_byte(instruction),
             0x7000..=0x7FFF => self.add_byte(instruction),
-            0x8000..=0x8FFF => match instruction & 0xF
-            {
-                        0x0 => self.ld(instruction),
-                        0x1 => self.or(instruction),
-                        0x2 => self.and(instruction),
-                        0x3 => self.xor(instruction),
-                        0x4 => self.add(instruction),
-                        0x5 => self.sub(instruction),
-                        0x6 => self.shr(instruction),
-                        0x7 => self.subn(instruction),
-                        0xE => self.shl(instruction),
-                          _ => panic!("OpCode does not exist!"),
+            0x8000..=0x8FFF => match instruction & 0xF {
+                0x0 => self.ld(instruction),
+                0x1 => self.or(instruction),
+                0x2 => self.and(instruction),
+                0x3 => self.xor(instruction),
+                0x4 => self.add(instruction),
+                0x5 => self.sub(instruction),
+                0x6 => self.shr(instruction),
+                0x7 => self.subn(instruction),
+                0xE => self.shl(instruction),
+                _ => panic!("OpCode does not exist!"),
             },
             0x9000..=0x9FFF => self.s_n_e(instruction),
             0xA000..=0xAFFF => self.ld_i(instruction),
             0xB000..=0xBFFF => self.jp_v0(instruction),
             0xC000..=0xCFFF => self.rnd(instruction),
             0xD000..=0xDFFF => self.drw(instruction),
-            0xE000..=0xEFFF => match instruction & 0xFF
-            {
-                       0x9E => self.skp(instruction),
-                       0xA1 => self.sknp(instruction),
-                          _ => panic!("OpCode does not exist!"),
-            }
-            0xF000..=0xFFFF => match instruction & 0xFF 
-            {
-                       0x07 => self.ld_reg_dt(instruction),
-                       0x0A => self.ld_wait(instruction),
-                       0x15 => self.ld_dt_reg(instruction),
-                       0x18 => self.ld_st(instruction),
-                       0x1E => self.add_i(instruction),
-                       0x29 => self.ld_loc(instruction),
-                       0x33 => self.ld_bcd(instruction),
-                       0x55 => self.store_regs(instruction),
-                       0x65 => self.read_regs(instruction),
-                          _ => panic!("OpCode does not exist!"),
-            }
+            0xE000..=0xEFFF => match instruction & 0xFF {
+                0x9E => self.skp(instruction),
+                0xA1 => self.sknp(instruction),
+                _ => panic!("OpCode does not exist!"),
+            },
+            0xF000..=0xFFFF => match instruction & 0xFF {
+                0x07 => self.ld_reg_dt(instruction),
+                0x0A => self.ld_wait(instruction),
+                0x15 => self.ld_dt_reg(instruction),
+                0x18 => self.ld_st(instruction),
+                0x1E => self.add_i(instruction),
+                0x29 => self.ld_loc(instruction),
+                0x33 => self.ld_bcd(instruction),
+                0x55 => self.store_regs(instruction),
+                0x65 => self.read_regs(instruction),
+                _ => panic!("OpCode does not exist!"),
+            },
             _ => panic!("OpCode does not exist!"),
         }
         self.pc += 1;
     }
 }
 impl Architecture {
-    
     /// 00E0 - CLS
     ///
     /// Clear the display.
     fn clear(self: &mut Self) -> () {
         self.display = [0u8; 64 * 32];
     }
-    
+
     /// 00EE - RET
     ///  
     /// Return from a subroutine.
@@ -106,7 +102,7 @@ impl Architecture {
     fn ret(self: Self) -> () {
         todo!();
     }
-    
+
     /// 1nnn - JP addr
     ///  
     /// Jump to location nnn.
@@ -115,11 +111,11 @@ impl Architecture {
     fn jp(self: &mut Self, instruction: u16) -> () {
         self.pc = instruction & 0xFFF;
     }
-    
+
     /// 2nnn - CALL addr
-    /// 
+    ///
     /// Call subroutine at nnn.
-    /// 
+    ///
     /// The interpreter increments the stack pointer,
     /// then puts the current PC on the top of the stack.
     /// The PC is then set to nnn.
@@ -128,7 +124,7 @@ impl Architecture {
         self.stack.push(self.pc);
         self.pc = instruction & 0xFFF;
     }
-    
+
     /// 3xkk - SE Vx, byte
     ///
     /// Skip next instruction if Vx == kk.
@@ -160,7 +156,7 @@ impl Architecture {
     /// 5xy0 - SE Vx, Vy
     ///
     /// Skip next instruction if Vx == Vy.
-    /// 
+    ///
     /// The interpreter compares register Vx to register Vy,
     /// and if they are equal, increments the program counter by 2.
     fn s_e_register(self: &mut Self, instruction: u16) -> () {
@@ -173,7 +169,7 @@ impl Architecture {
             self.pc += 2;
         }
     }
-    
+
     /// 6xkk - LD Vx, byte
     ///
     /// Set Vx = kk.
@@ -184,7 +180,7 @@ impl Architecture {
         let kk: u8 = (instruction & 0x00FF).try_into().unwrap();
         self.v[x] = kk;
     }
-    
+
     /// 7xkk - ADD Vx, byte
     ///
     /// Set Vx = Vx + kk.
@@ -392,7 +388,6 @@ impl Architecture {
     fn read_regs(self: &mut Self, instruction: u16) -> () {
         todo!()
     }
-
 
     fn exit() -> () {
         process::exit(0);
