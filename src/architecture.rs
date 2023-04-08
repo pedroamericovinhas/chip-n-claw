@@ -37,7 +37,7 @@ impl Architecture {
     pub fn execute(self: &mut Self, rom: &Vec<u16>) -> () {
         let instruction = rom[self.pc as usize];
         match instruction {
-            0x00E0 => self.cls(),
+            0x00E0 => self.clear(),
             0x00EE => self.ret(),
             0x1000..=0x1FFF => self.jp(instruction),
             0x2000..=0x2FFF => self.call(instruction),
@@ -89,34 +89,31 @@ impl Architecture {
     }
 }
 impl Architecture {
-    fn cls(self: &mut Self) -> () {
-        /*    00E0
-         *
-         *    Clear the display.
-         */
+    /// 00E0 - CLS
+    ///
+    /// Clear the display.
+    fn clear(self: &mut Self) -> () {
         self.display = [0u8; 64 * 32];
     }
+    /// 00EE - RET
+    ///  
+    /// Return from a subroutine.
+    ///  
+    /// The interpreter sets the program counter to the address at the top of
+    /// the stack, then subtracts 1 from the stack pointer.
     fn ret(self: Self) -> () {
-        /*    00EE
-         *
-         *    Return from a subroutine.
-         *
-         *    The interpreter sets the program counter to the address
-         *    at the top of the stack, then subtracts 1 from the stack pointer.
-         */
         todo!();
     }
+    /// 1nnn - JP addr
+    ///  
+    /// Jump to location nnn.
+    ///  
+    /// The interpreter sets the program counter to nnn.
     fn jp(self: &mut Self, instruction: u16) -> () {
-        /*    1nnn
-         *
-         *    Jump to location nnn.
-         *
-         *    The interpreter sets the program counter to nnn.
-         */
         self.pc = instruction & 0xFFF;
     }
     fn call(self: &mut Self, instruction: u16) -> () {
-        /*    2nnn
+        /*    2nnn - CALL addr
          *
          *    Call subroutine at nnn.
          *
@@ -129,7 +126,7 @@ impl Architecture {
         self.pc = instruction & 0xFFF;
     }
     fn s_e_byte(self: &mut Self, instruction: u16) -> () {
-        /*   3xkk
+        /*   3xkk - SE Vx, byte
          *
          *    Skip next instruction if Vx == kk.
          *
@@ -143,7 +140,7 @@ impl Architecture {
         }
     }
     fn s_n_e_byte(self: &mut Self, instruction: u16) -> () {
-        /*   4xkk
+        /*   4xkk - SNE Vx, byte
          *
          *    Skip next instruction if Vx != kk.
          *
@@ -157,7 +154,7 @@ impl Architecture {
         }
     }
     fn s_e_register(self: &mut Self, instruction: u16) -> () {
-        /*   5xy0
+        /*   5xy0 - SE Vx, Vy
          *
          *    Skip next instruction if Vx == Vy.
          *
@@ -174,7 +171,7 @@ impl Architecture {
         }
     }
     fn load_byte(self: &mut Self, instruction: u16) -> () {
-        /*   6xkk
+        /*   6xkk - LD Vx, byte
          *
          *   Set Vx = kk.
          *
@@ -185,7 +182,7 @@ impl Architecture {
         self.v[x] = kk;
     }
     fn add_byte(self: &mut Self, instruction: u16) -> () {
-        /*   7xkk
+        /*   7xkk - ADD Vx, byte
          *
          *   Set Vx = Vx + kk.
          *
@@ -197,7 +194,7 @@ impl Architecture {
         self.v[x] += kk;
     }
     fn ld(self: &mut Self, instruction: u16) -> () {
-        /*   8xy0
+        /*   8xy0 - LD Vx, Vy
          *
          *   Set Vx = Vy.
          *
@@ -208,35 +205,35 @@ impl Architecture {
         self.v[x] = self.v[y];
     }
     fn or(self: &mut Self, instruction: u16) -> () {
-        /* 8xy1
+        /* 8xy1 - OR Vx, Vy
          *
          * Set Vx = Vx OR Vy.
          *
-         * Performs a bitwise OR on the values of Vx and Vy, then stores the result
-         * in Vx. A bitwise OR compares the corrseponding bits from two values, and
-         * if either bit is 1, then the same bit in the result is also 1. Otherwise,
-         * it is 0.
+         * Performs a bitwise OR on the values of Vx and Vy, then stores the
+         * result in Vx. A bitwise OR compares the corrseponding bits from two
+         * values, and if either bit is 1, then the same bit in the result is
+         * also 1. Otherwise, it is 0.
          */
         let x: usize = ((instruction & 0x0F00) >> 2 * 4).try_into().unwrap();
         let y: usize = ((instruction & 0x00F0) >> 1 * 4).try_into().unwrap();
         self.v[x] = self.v[x] | self.v[y];
     }
     fn and(self: &mut Self, instruction: u16) -> () {
-        /* 8xy2
+        /* 8xy2 - AND Vx, Vy
          *
          * Set Vx = Vx AND Vy.
          *
-         * Performs a bitwise AND on the values of Vx and Vy, then stores the result
-         * in Vx. A bitwise AND compares the corrseponding bits from two values, and
-         * if if both bits are 1, then the same bit in the result is also 1.
-         * Otherwise, it is 0.
+         * Performs a bitwise AND on the values of Vx and Vy, then stores the
+         * result in Vx. A bitwise AND compares the corresponding bits from two
+         * values, and if if both bits are 1, then the same bit in the result is
+         * also 1. Otherwise, it is 0.
          */
         let x: usize = ((instruction & 0x0F00) >> 2 * 4).try_into().unwrap();
         let y: usize = ((instruction & 0x00F0) >> 1 * 4).try_into().unwrap();
         self.v[x] = self.v[x] & self.v[y];
     }
     fn xor(self: &mut Self, instruction: u16) -> () {
-        /* 8xy3
+        /* 8xy3 - XOR Vx, Vy
          *
          * Set Vx = Vx XOR Vy.
          *
@@ -250,7 +247,7 @@ impl Architecture {
         self.v[x] = self.v[x] ^ self.v[y];
     }
     fn add(self: &mut Self, instruction: u16) -> () {
-        /* 8xy4
+        /* 8xy4 - ADD Vx, Vy
          *
          * Set Vx = Vx + Vy, set VF = carry.
          *
@@ -273,7 +270,7 @@ impl Architecture {
         }
     }
     fn sub(self: &mut Self, instruction: u16) -> () {
-        /* 8xy5
+        /* 8xy5 - SUB Vx, Vy
          *
          * Set Vx = Vx - Vy, set VF = NOT borrow.
          *
@@ -287,7 +284,7 @@ impl Architecture {
         self.v[x] = subs;
     }
     fn shr(self: &mut Self, instruction: u16) -> () {
-        /* 8xy6
+        /* 8xy6 - SHR Vx {, Vy}
          *
          * Set Vx = Vx SHR 1.
          *
@@ -299,7 +296,7 @@ impl Architecture {
         self.v[x] >>= 1;
     }
     fn subn(self: &mut Self, instruction: u16) -> () {
-        /* 8xy7
+        /* 8xy7 - SUBN Vx, Vy
          *
          * Set Vx = Vy - Vx, set VF = NOT borrow.
          *
@@ -309,7 +306,7 @@ impl Architecture {
         self.sub(Hex::swap_hex_digits(instruction, 1, 2));
     }
     fn shl(self: &mut Self, instruction: u16) -> () {
-        /* 8xy6
+        /* 8xyE - SHL Vx {, Vy}
          *
          * Set Vx = Vx SHL 1.
          *
@@ -321,6 +318,13 @@ impl Architecture {
         self.v[x] <<= 1;
     }
     fn s_n_e(self: &mut Self, instruction: u16) -> () {
+        /* 9xy0 - SNE Vx, Vy
+         *
+         * Skip next instruction if Vx != Vy.
+         *
+         * The values of Vx and Vy are compared, and if they are not equal, the
+         * program counter is increased by 2.
+         */
         todo!()
     }
     fn ld_i(self: &mut Self, instruction: u16) -> () {
