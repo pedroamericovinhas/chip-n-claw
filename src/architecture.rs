@@ -34,7 +34,7 @@ impl Architecture {
     }
 }
 impl Architecture {
-    pub fn execute(self: &mut Self, rom: Vec<u16>) -> () {
+    pub fn execute(self: &mut Self, rom: &Vec<u16>) -> () {
         let instruction = rom[self.pc as usize];
         match instruction {
             0x00E0 => self.cls(),
